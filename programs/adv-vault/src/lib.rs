@@ -55,7 +55,7 @@ pub mod advanced_vault {
         Ok(())
     }
 
-    pub fn withdraw_stake(ctx: Context<WithdrawStake>) -> Result<()> {
+    pub fn withdraw_stake(ctx: &mut Context<WithdrawStake>) -> Result<()> {
         let vault = &ctx.accounts.vault;
         let user_stake = &mut ctx.accounts.user_stake;
         let clock = Clock::get()?;
@@ -170,7 +170,7 @@ pub struct WithdrawStake<'info> {
         mut,                                         
         seeds = [b"user_stake", vault.key().as_ref(), user.key().as_ref()],
         bump = user_stake.bump,
-        has_one = user @ VaultError::UnauthorizedUser 
+        has_one = user @ VaultError::UnauthorizedUser
     )]
     pub user_stake: Account<'info, UserStake>,
 
@@ -243,7 +243,7 @@ impl UserStake {
 
         self.unlock_time = current_time
             .checked_add(lock_duration)
-            .ok_or(VaultError::MathOverflow)?;
+            .ok_or::<E>(VaultError::MathOverflow.into())?;
 
         self.is_withdrawn = false;
         self.bump = bump;
@@ -262,7 +262,7 @@ impl UserStake {
 
         self.amount
             .checked_mul(multiplier as u64)
-            .ok_or(VaultError::MathOverflow)
+            .ok_or(VaultError::MathOverflow.into())
     }
 
     pub fn get_multiplier(&self) -> u8 {
